@@ -144,6 +144,9 @@
 		}
 		
 		function parseDate(d) {
+			if (d == "-") {
+				return new Date("1970-01-01T00:00:00.000Z");
+			}
 			let re = /(\d\d)\/(\d\d)\/(\d{4})/
 			let arr = re.exec(d);
 			return new Date(`${arr[3]}-${arr[2]}-${arr[1]}T00:00:00.000Z`);

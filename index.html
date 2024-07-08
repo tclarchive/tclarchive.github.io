@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Eggdrop Tcl Archive</title>
+	</head>
+	<style>
+		.filtered {
+			display: none;
+		}
+	</style>
+	<script type="module">
+		let scripts = [];
+		function init() {
+			let req = new XMLHttpRequest();
+			req.addEventListener("load", loadData);
+			req.open("index.json");
+			req.send();
+		}
+		
+		function loadData() {
+			scripts = json.parse(this.responseText);
+			buildTable();
+		}
+		
+		function buildTable() {
+			let tbody = document.getElementById("tbody");
+			
+			for (let scr of scripts) {
+				let tr = makeRow(scr);
+				scr.tr = tr;
+				tbody.appendChild(tr);
+			}
+		}
+		
+		function makeRow(scr) {
+			let tr = document.createElement("tr");
+			let td = document.createElement("td");
+			let a = document.createElement("a");
+			let url = scr.id + "/" + scr.filename; 
+			a.href = url;
+			let span = document.createElement("span");
+			span.title = scr.downloads + " downloads";
+			let text = document.createTextNode(scr.name);
+			span.appendChild(text);
+			a.appendChild(span);
+			td.appendChild(a);
+			tr.appendChild(td);
+						
+			td = document.createElement("td");
+			a = document.createElement("a");
+			a.href = url;
+			a.tabindex = -1;
+			span = document.createElement("span");
+			text = document.createTextNode(scr.version);
+			span.appendChild(text);
+			a.appendChild(span);
+			td.appendChild(a);
+			tr.appendChild(td);
+			
+			td = document.createElement("td");
+			a = document.createElement("a");
+			a.href = url;
+			a.tabindex = -1;
+			span = document.createElement("span");
+			text = document.createTextNode(scr.date);
+			span.appendChild(text);
+			a.appendChild(span);
+			td.appendChild(a);
+			tr.appendChild(td);
+			
+			td = document.createElement("td");
+			a = document.createElement("a");
+			a.href = url;
+			a.tabindex = -1;
+			span = document.createElement("span");
+			text = document.createTextNode(scr.author);
+			span.appendChild(text);
+			a.appendChild(span);
+			td.appendChild(a);
+			tr.appendChild(td);
+			
+			td = document.createElement("td");
+			a = document.createElement("a");
+			a.href = url;
+			a.tabindex = -1;
+			span = document.createElement("span");
+			text = document.createTextNode(scr.description);
+			span.appendChild(text);
+			a.appendChild(span);
+			td.appendChild(a);
+			if (scr.extdesc !== undefined) {
+				a = document.createElement("a");			
+				a.href = "javascript:";
+				a.addEventListener("click", showExt(scr.extdesc));
+				text = document.createTextNode("See extended description.");
+				a.appendChild(text);
+				td.appendChild(a);
+			}
+			tr.appendChild(td);
+			
+			return tr;
+		}
+		
+		function showExt(message) {
+			return (function() {
+				window.alert(message);
+			});
+		}
+		
+		function filterRows() {
+			let fs = this.value;
+			
+			let attrs = ["name", "author", "description"];
+			
+			for (let scr of scripts) {
+				let found = false;
+				for (let attr of attrs) {
+					if (scr[attr].indexOf(fs) != -1) {
+						found = true;
+						break;
+					}
+				}
+				if (found) {
+					scr.tr.classList.remove("filtered");
+				} else {
+					scr.tr.classList.add("filtered");
+				}
+			}
+		}
+		
+		init();
+	</script>
+	<body>
+		<p>This is a read-only mirror of the <a href="https://tclarchive.org/">tclarchive.org</a> scripts.</p>
+		<p>Note, the download count is not being updated anymore</p>
+		
+		<input type="text" id="search" placeholder="search" />
+		
+		<table>
+			<thead>
+				<tr>
+					<th scope="col">Script Name</th>
+					<th scope="col">Version</th>
+					<th scope="col">Date</th>
+					<th scope="col">Author</th>
+					<th scope="col">Description</th>
+				</tr>
+			</thead>
+			<tbody id="tbody">
+			</tbody>
+		</table>
+		
+	</body>
+</html>

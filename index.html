@@ -10,16 +10,21 @@
 	</style>
 	<script type="module">
 		let scripts = [];
+		let orderby = {
+			"name": "id",
+			"order": false
+		};
 		function init() {
 			document.getElementById("search").addEventListener("change", filterRows);
 			
 			// ["name", "version", "date", "author", "description"]
-			makeSort("name");
-			makeSort("version");
-			makeSort("date", parseDate);
-			makeSort("author");
-			makeSort("description");
-			makeSort("downloads");
+			makeSort("name", false);
+			makeSort("version", true);
+			makeSort("date", true, parseDate);
+			makeSort("author", false);
+			makeSort("description", false);
+			makeSort("id", false);
+			makeSort("downloads", true);
 		
 			let req = new XMLHttpRequest();
 			req.addEventListener("load", loadData);
@@ -139,16 +144,16 @@
 		}
 		
 		function parseDate(d) {
-			let re = /(\d\d)-(\d\d)-(\d{4})/
+			let re = /(\d\d)\/(\d\d)\/(\d{4})/
 			let arr = re.exec(d);
 			return new Date(`${arr[3]}-${arr[2]}-${arr[1]}T00:00:00.000Z`);
 		}
 		
-		function makeSort(name, fn) {
+		function makeSort(name, defdesc, fn) {
 			if (fn === undefined) {
 				fn = a => a;
 			};
-			let cf = function(a, b) {
+			let cfa = function(a, b) {
 				let av = fn(a[name]);
 				let bv = fn(b[name]);
 				if (av < bv) {
@@ -159,8 +164,25 @@
 					return 0;
 				}
 			};
+			let cfd = function(a, b) {
+				let av = fn(a[name]);
+				let bv = fn(b[name]);
+				if (av > bv) {
+					return -1;
+				} else if (av < bv) {
+					return 1;
+				} else {
+					return 0;
+				}
+			};
 			let cb = function() {
-				scripts.sort(cf);
+				if (orderby.name == name) {
+					orderby.order = !orderby.order;
+				} else {
+					orderby.name = name;
+					orderby.order = defdesc;
+				}
+				scripts.sort(orderby.order ? cfd : cfa);
 				let tbody = document.getElementById("tbody");
 				for (let scr of scripts) {
 					tbody.appendChild(scr.tr);
@@ -176,7 +198,7 @@
 		<p>Note, the download count is not being updated anymore</p>
 		
 		<input type="text" id="search" placeholder="search" />
-		<p>Sort by <a href="javascript:" id="th-downloads">Downloads</a></p>
+		<p>Sort by: <a href="javascript:" id="th-id">ID</a> <a href="javascript:" id="th-downloads">Downloads</a></p>
 		
 		<table>
 			<thead>

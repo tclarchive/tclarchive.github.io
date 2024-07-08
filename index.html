@@ -12,6 +12,14 @@
 		let scripts = [];
 		function init() {
 			document.getElementById("search").addEventListener("change", filterRows);
+			
+			// ["name", "version", "date", "author", "description"]
+			makeSort("name");
+			makeSort("version");
+			makeSort("date", parseDate);
+			makeSort("author");
+			makeSort("description");
+			makeSort("downloads");
 		
 			let req = new XMLHttpRequest();
 			req.addEventListener("load", loadData);
@@ -130,6 +138,37 @@
 			}
 		}
 		
+		function parseDate(d) {
+			let re = /(\d\d)-(\d\d)-(\d{4})/
+			let arr = re.exec(d);
+			return new Date(`${arr[3]}-${arr[2]}-${arr[1]}T00:00:00.000Z`);
+		}
+		
+		function makeSort(name, fn) {
+			if (fn === undefined) {
+				fn = a => a;
+			};
+			let cf = function(a, b) {
+				let av = fn(a[name]);
+				let bv = fn(b[name]);
+				if (av < bv) {
+					return -1;
+				} else if (av > bv) {
+					return 1;
+				} else {
+					return 0;
+				}
+			};
+			let cb = function() {
+				scripts.sort(cf);
+				let tbody = document.getElementById("tbody");
+				for (let scr of scripts) {
+					tbody.appendChild(scr.tr);
+				}
+			};
+			document.getElementById("th-" + name).addEventListener("click", cb);
+		}
+		
 		init();
 	</script>
 	<body>
@@ -137,15 +176,16 @@
 		<p>Note, the download count is not being updated anymore</p>
 		
 		<input type="text" id="search" placeholder="search" />
+		<p>Sort by <a href="javascript:" id="th-downloads">Downloads</a></p>
 		
 		<table>
 			<thead>
 				<tr>
-					<th scope="col">Script Name</th>
-					<th scope="col">Version</th>
-					<th scope="col">Date</th>
-					<th scope="col">Author</th>
-					<th scope="col">Description</th>
+					<th scope="col" id="th-name">Script Name</th>
+					<th scope="col" id="th-version">Version</th>
+					<th scope="col" id="th-date">Date</th>
+					<th scope="col" id="th-author">Author</th>
+					<th scope="col" id="th-description">Description</th>
 				</tr>
 			</thead>
 			<tbody id="tbody">

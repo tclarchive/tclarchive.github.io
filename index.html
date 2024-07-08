@@ -11,14 +11,16 @@
 	<script type="module">
 		let scripts = [];
 		function init() {
+			document.getElementById("search").addEventListener("change", filterRows);
+		
 			let req = new XMLHttpRequest();
 			req.addEventListener("load", loadData);
-			req.open("index.json");
+			req.open("GET", "index.json");
 			req.send();
 		}
 		
 		function loadData() {
-			scripts = json.parse(this.responseText);
+			scripts = JSON.parse(this.responseText);
 			buildTable();
 		}
 		

@@ -195,7 +195,7 @@
 				a = document.createElement("a");			
 				a.href = "javascript:";
 				a.className = "extdesc";
-				a.addEventListener("click", showExt(scr.extdesc));
+				a.addEventListener("click", showExt(scr));
 				text = document.createTextNode("See extended description.");
 				a.appendChild(text);
 				td.appendChild(a);
@@ -205,9 +205,13 @@
 			return tr;
 		}
 		
-		function showExt(message) {
+		function showExt(scr) {
 			return (function() {
-				window.alert(message);
+				let et = document.getElementById("exttext");
+				et.childNodes.forEach(n => et.removeChild(n));
+				let tn = document.createTextNode(scr.extdesc);
+				et.appendChild(tn);
+				document.getElementById("extdesc").showModal();
 			});
 		}
 		
@@ -352,5 +356,10 @@
 			</tbody>
 		</table>
 		
+		<dialog id="extdesc">
+			<form method="dialog">
+				<input type="submit" value="X">
+				<pre id="exttext"></pre>
+			</form>
 	</body>
 </html>

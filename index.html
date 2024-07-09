@@ -2,10 +2,88 @@
 <html>
 	<head>
 		<title>Eggdrop Tcl Archive</title>
+		<meta charset="utf-8" />
 	</head>
 	<style>
+		:root {
+			color-scheme: light dark;
+		}
+
+		table {
+			border-collapse: collapse;
+		}
+
+		@media (prefers-color-scheme: dark) {
+			body {
+				background: #000;
+			}
+
+			a:link {
+				color: #fff;
+			}
+			
+			a:visited {
+				color: #777;
+			}
+			
+			a:hover {
+				color: #f77;
+			}
+			
+			tr:nth-child(odd of :not(.filtered)) {
+				background-color: #222;
+			}
+			
+			.extdesc:link {
+				color: #bfb;
+			}
+		}
+
+		@media (prefers-color-scheme: light) {
+			a:link {
+				color: #000;
+			}
+			
+			a:visited {
+				color: #777;
+			}
+			
+			tr:nth-child(odd of :not(.filtered)) {
+				background-color: #ccc;
+			}
+			
+			a:hover {
+				color: #900;
+			}
+			
+			.extdesc:link {
+				color: #080;
+			}
+		}
+
+		a:link {
+			text-decoration: none;
+		}
+		form {
+			display: inline;
+		}
+		.extdesc {
+			display:block;
+		}
 		.filtered {
 			display: none;
+		}
+		.category {
+			display: block;
+			font-size: small;
+		}
+		
+		.sort-asc:after {
+			content: "↓";
+		}
+		
+		.sort-desc:after {
+			content: "↑";
 		}
 	</style>
 	<script type="module">
@@ -15,9 +93,8 @@
 			"order": false
 		};
 		function init() {
-			document.getElementById("search").addEventListener("change", filterRows);
+			document.getElementById("search").addEventListener("input", filterRows);
 			
-			// ["name", "version", "date", "author", "description"]
 			makeSort("name", false);
 			makeSort("version", true);
 			makeSort("date", true, parseDate);
@@ -25,6 +102,7 @@
 			makeSort("description", false);
 			makeSort("id", false);
 			makeSort("downloads", true);
+			document.getElementById("th-id").classList.add("sort-asc");
 		
 			let req = new XMLHttpRequest();
 			req.addEventListener("load", loadData);
@@ -34,6 +112,9 @@
 		
 		function loadData() {
 			scripts = JSON.parse(this.responseText);
+			
+			buildCategories();
+			
 			buildTable();
 		}
 		
@@ -58,6 +139,13 @@
 			let text = document.createTextNode(scr.name);
 			span.appendChild(text);
 			a.appendChild(span);
+			if (scr.category && scr.category != "") {
+				span = document.createElement("span");
+				span.classList.add("category");
+				text = document.createTextNode(scr.category);
+				span.appendChild(text);
+				a.appendChild(span);
+			}
 			td.appendChild(a);
 			tr.appendChild(td);
 						
@@ -106,6 +194,7 @@
 			if (scr.extdesc !== undefined) {
 				a = document.createElement("a");			
 				a.href = "javascript:";
+				a.className = "extdesc";
 				a.addEventListener("click", showExt(scr.extdesc));
 				text = document.createTextNode("See extended description.");
 				a.appendChild(text);
@@ -123,16 +212,20 @@
 		}
 		
 		function filterRows() {
-			let fs = this.value;
+			let fs = document.getElementById("search").value;
+			
+			let cat = document.querySelector("input[name=category]:checked").value;
 			
 			let attrs = ["name", "author", "description"];
 			
 			for (let scr of scripts) {
 				let found = false;
-				for (let attr of attrs) {
-					if (scr[attr].indexOf(fs) != -1) {
-						found = true;
-						break;
+				if (cat == "" || cat == scr.category) {
+					for (let attr of attrs) {
+						if (scr[attr].indexOf(fs) != -1) {
+							found = true;
+							break;
+						}
 					}
 				}
 				if (found) {
@@ -179,6 +272,10 @@
 				}
 			};
 			let cb = function() {
+				let lastSort = document.getElementById("th-" + orderby.name);
+				lastSort.classList.remove("sort-asc");
+				lastSort.classList.remove("sort-desc");
+			
 				if (orderby.name == name) {
 					orderby.order = !orderby.order;
 				} else {
@@ -190,17 +287,55 @@
 				for (let scr of scripts) {
 					tbody.appendChild(scr.tr);
 				}
+				
+				document.getElementById("th-" + name).classList.add(orderby.order ? "sort-desc" : "sort-asc");
 			};
 			document.getElementById("th-" + name).addEventListener("click", cb);
+		}
+		
+		function buildCategories() {
+			let cats = {};
+			
+			for (let scr of scripts) {
+				if (scr.category && scr.category != "") {
+					cats[scr.category] = true;
+				}
+			}
+			
+			makeFilter("", "All");
+			document.getElementById("cat-").checked = true;
+			
+			for (let cat in cats) {
+				makeFilter(cat, cat);
+			}
+		}
+		
+		function makeFilter(name, display) {
+			let frm = document.getElementById("cat-filter");
+			let input = document.createElement("input");
+			input.type = "radio";
+			input.name = "category";
+			input.value = name;
+			input.id = "cat-" + name;
+			input.addEventListener("change", filterRows);
+			frm.appendChild(input);
+			let lbl = document.createElement("label");
+			lbl.htmlFor = input.id; 
+			let text = document.createTextNode(display);
+			lbl.appendChild(text);
+			frm.appendChild(lbl);
 		}
 		
 		init();
 	</script>
 	<body>
+		<p>In memory of <a href="http://mytclscripts.com/">SpiKe^^</a>. Rest in peace.</p>
 		<p>This is a read-only mirror of the <a href="https://tclarchive.org/">tclarchive.org</a> scripts.</p>
 		<p>Note, the download count is not being updated anymore</p>
 		
 		<input type="text" id="search" placeholder="search" />
+		<br />
+		<span>Filter Category: <form id="cat-filter"></form></span>
 		<p>Sort by: <a href="javascript:" id="th-id">ID</a> <a href="javascript:" id="th-downloads">Downloads</a></p>
 		
 		<table>

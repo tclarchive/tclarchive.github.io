@@ -106,7 +106,7 @@
 		
 			let req = new XMLHttpRequest();
 			req.addEventListener("load", loadData);
-			req.open("GET", "index.json");
+			req.open("GET", "tclarchive/index.json");
 			req.send();
 		}
 		
@@ -132,7 +132,7 @@
 			let tr = document.createElement("tr");
 			let td = document.createElement("td");
 			let a = document.createElement("a");
-			let url = scr.id + "/" + scr.filename; 
+			let url = "tclarchive/" + scr.id + "/" + scr.filename; 
 			a.href = url;
 			let span = document.createElement("span");
 			span.title = scr.downloads + " downloads";

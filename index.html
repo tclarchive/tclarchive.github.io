@@ -3,335 +3,335 @@
 	<head>
 		<title>Eggdrop Tcl Archive</title>
 		<meta charset="utf-8" />
-	</head>
-	<style>
-		:root {
-			color-scheme: light dark;
-		}
-
-		table {
-			border-collapse: collapse;
-		}
-
-		@media (prefers-color-scheme: dark) {
-			body {
-				background: #000;
+		<style>
+			:root {
+				color-scheme: light dark;
 			}
 
-			a:link {
-				color: #fff;
+			table {
+				border-collapse: collapse;
 			}
-			
-			a:visited {
-				color: #777;
-			}
-			
-			a:hover {
-				color: #f77;
-			}
-			
-			tr:nth-child(odd of :not(.filtered)) {
-				background-color: #222;
-			}
-			
-			.extdesc:link {
-				color: #bfb;
-			}
-		}
 
-		@media (prefers-color-scheme: light) {
-			a:link {
-				color: #000;
-			}
-			
-			a:visited {
-				color: #777;
-			}
-			
-			tr:nth-child(odd of :not(.filtered)) {
-				background-color: #ccc;
-			}
-			
-			a:hover {
-				color: #900;
-			}
-			
-			.extdesc:link {
-				color: #080;
-			}
-		}
+			@media (prefers-color-scheme: dark) {
+				body {
+					background: #000;
+				}
 
-		a:link {
-			text-decoration: none;
-		}
-		form {
-			display: inline;
-		}
-		.extdesc {
-			display:block;
-		}
-		.filtered {
-			display: none;
-		}
-		.category {
-			display: block;
-			font-size: small;
-		}
-		
-		.sort-asc:after {
-			content: "↓";
-		}
-		
-		.sort-desc:after {
-			content: "↑";
-		}
-	</style>
-	<script type="module">
-		let scripts = [];
-		let orderby = {
-			"name": "id",
-			"order": false
-		};
-		function init() {
-			document.getElementById("search").addEventListener("input", filterRows);
-			
-			makeSort("name", false);
-			makeSort("version", true);
-			makeSort("date", true, parseDate);
-			makeSort("author", false);
-			makeSort("description", false);
-			makeSort("id", false);
-			makeSort("downloads", true);
-			document.getElementById("th-id").classList.add("sort-asc");
-		
-			let req = new XMLHttpRequest();
-			req.addEventListener("load", loadData);
-			req.open("GET", "tclarchive/index.json");
-			req.send();
-		}
-		
-		function loadData() {
-			scripts = JSON.parse(this.responseText);
-			
-			buildCategories();
-			
-			buildTable();
-		}
-		
-		function buildTable() {
-			let tbody = document.getElementById("tbody");
-			
-			for (let scr of scripts) {
-				let tr = makeRow(scr);
-				scr.tr = tr;
-				tbody.appendChild(tr);
-			}
-		}
-		
-		function makeRow(scr) {
-			let tr = document.createElement("tr");
-			let td = document.createElement("td");
-			let a = document.createElement("a");
-			let url = "tclarchive/" + scr.id + "/" + scr.filename; 
-			a.href = url;
-			let span = document.createElement("span");
-			span.title = scr.downloads + " downloads";
-			let text = document.createTextNode(scr.name);
-			span.appendChild(text);
-			a.appendChild(span);
-			if (scr.category && scr.category != "") {
-				span = document.createElement("span");
-				span.classList.add("category");
-				text = document.createTextNode(scr.category);
-				span.appendChild(text);
-				a.appendChild(span);
-			}
-			td.appendChild(a);
-			tr.appendChild(td);
-						
-			td = document.createElement("td");
-			a = document.createElement("a");
-			a.href = url;
-			a.tabindex = -1;
-			span = document.createElement("span");
-			text = document.createTextNode(scr.version);
-			span.appendChild(text);
-			a.appendChild(span);
-			td.appendChild(a);
-			tr.appendChild(td);
-			
-			td = document.createElement("td");
-			a = document.createElement("a");
-			a.href = url;
-			a.tabindex = -1;
-			span = document.createElement("span");
-			text = document.createTextNode(scr.date);
-			span.appendChild(text);
-			a.appendChild(span);
-			td.appendChild(a);
-			tr.appendChild(td);
-			
-			td = document.createElement("td");
-			a = document.createElement("a");
-			a.href = url;
-			a.tabindex = -1;
-			span = document.createElement("span");
-			text = document.createTextNode(scr.author);
-			span.appendChild(text);
-			a.appendChild(span);
-			td.appendChild(a);
-			tr.appendChild(td);
-			
-			td = document.createElement("td");
-			a = document.createElement("a");
-			a.href = url;
-			a.tabindex = -1;
-			span = document.createElement("span");
-			text = document.createTextNode(scr.description);
-			span.appendChild(text);
-			a.appendChild(span);
-			td.appendChild(a);
-			if (scr.extdesc !== undefined) {
-				a = document.createElement("a");			
-				a.href = "javascript:";
-				a.className = "extdesc";
-				a.addEventListener("click", showExt(scr));
-				text = document.createTextNode("See extended description.");
-				a.appendChild(text);
-				td.appendChild(a);
-			}
-			tr.appendChild(td);
-			
-			return tr;
-		}
-		
-		function showExt(scr) {
-			return (function() {
-				let et = document.getElementById("exttext");
-				et.childNodes.forEach(n => et.removeChild(n));
-				let tn = document.createTextNode(scr.extdesc);
-				et.appendChild(tn);
-				document.getElementById("extdesc").showModal();
-			});
-		}
-		
-		function filterRows() {
-			let fs = document.getElementById("search").value;
-			
-			let cat = document.querySelector("input[name=category]:checked").value;
-			
-			let attrs = ["name", "author", "description"];
-			
-			for (let scr of scripts) {
-				let found = false;
-				if (cat == "" || cat == scr.category) {
-					for (let attr of attrs) {
-						if (scr[attr].indexOf(fs) != -1) {
-							found = true;
-							break;
-						}
-					}
-				}
-				if (found) {
-					scr.tr.classList.remove("filtered");
-				} else {
-					scr.tr.classList.add("filtered");
-				}
-			}
-		}
-		
-		function parseDate(d) {
-			if (d == "-") {
-				return new Date("1970-01-01T00:00:00.000Z");
-			}
-			let re = /(\d\d)\/(\d\d)\/(\d{4})/
-			let arr = re.exec(d);
-			return new Date(`${arr[3]}-${arr[2]}-${arr[1]}T00:00:00.000Z`);
-		}
-		
-		function makeSort(name, defdesc, fn) {
-			if (fn === undefined) {
-				fn = a => a;
-			};
-			let cfa = function(a, b) {
-				let av = fn(a[name]);
-				let bv = fn(b[name]);
-				if (av < bv) {
-					return -1;
-				} else if (av > bv) {
-					return 1;
-				} else {
-					return 0;
-				}
-			};
-			let cfd = function(a, b) {
-				let av = fn(a[name]);
-				let bv = fn(b[name]);
-				if (av > bv) {
-					return -1;
-				} else if (av < bv) {
-					return 1;
-				} else {
-					return 0;
-				}
-			};
-			let cb = function() {
-				let lastSort = document.getElementById("th-" + orderby.name);
-				lastSort.classList.remove("sort-asc");
-				lastSort.classList.remove("sort-desc");
-			
-				if (orderby.name == name) {
-					orderby.order = !orderby.order;
-				} else {
-					orderby.name = name;
-					orderby.order = defdesc;
-				}
-				scripts.sort(orderby.order ? cfd : cfa);
-				let tbody = document.getElementById("tbody");
-				for (let scr of scripts) {
-					tbody.appendChild(scr.tr);
+				a:link {
+					color: #fff;
 				}
 				
-				document.getElementById("th-" + name).classList.add(orderby.order ? "sort-desc" : "sort-asc");
-			};
-			document.getElementById("th-" + name).addEventListener("click", cb);
-		}
-		
-		function buildCategories() {
-			let cats = {};
+				a:visited {
+					color: #777;
+				}
+				
+				a:hover {
+					color: #f77;
+				}
+				
+				tr:nth-child(odd of :not(.filtered)) {
+					background-color: #222;
+				}
+				
+				.extdesc:link {
+					color: #bfb;
+				}
+			}
+
+			@media (prefers-color-scheme: light) {
+				a:link {
+					color: #000;
+				}
+				
+				a:visited {
+					color: #777;
+				}
+				
+				tr:nth-child(odd of :not(.filtered)) {
+					background-color: #ccc;
+				}
+				
+				a:hover {
+					color: #900;
+				}
+				
+				.extdesc:link {
+					color: #080;
+				}
+			}
+
+			a:link {
+				text-decoration: none;
+			}
+			form {
+				display: inline;
+			}
+			.extdesc {
+				display:block;
+			}
+			.filtered {
+				display: none;
+			}
+			.category {
+				display: block;
+				font-size: small;
+			}
 			
-			for (let scr of scripts) {
-				if (scr.category && scr.category != "") {
-					cats[scr.category] = true;
+			.sort-asc:after {
+				content: "↓";
+			}
+			
+			.sort-desc:after {
+				content: "↑";
+			}
+		</style>
+		<script type="module">
+			let scripts = [];
+			let orderby = {
+				"name": "id",
+				"order": false
+			};
+			function init() {
+				document.getElementById("search").addEventListener("input", filterRows);
+				
+				makeSort("name", false);
+				makeSort("version", true);
+				makeSort("date", true, parseDate);
+				makeSort("author", false);
+				makeSort("description", false);
+				makeSort("id", false);
+				makeSort("downloads", true);
+				document.getElementById("th-id").classList.add("sort-asc");
+			
+				let req = new XMLHttpRequest();
+				req.addEventListener("load", loadData);
+				req.open("GET", "tclarchive/index.json");
+				req.send();
+			}
+			
+			function loadData() {
+				scripts = JSON.parse(this.responseText);
+				
+				buildCategories();
+				
+				buildTable();
+			}
+			
+			function buildTable() {
+				let tbody = document.getElementById("tbody");
+				
+				for (let scr of scripts) {
+					let tr = makeRow(scr);
+					scr.tr = tr;
+					tbody.appendChild(tr);
 				}
 			}
 			
-			makeFilter("", "All");
-			document.getElementById("cat-").checked = true;
-			
-			for (let cat in cats) {
-				makeFilter(cat, cat);
+			function makeRow(scr) {
+				let tr = document.createElement("tr");
+				let td = document.createElement("td");
+				let a = document.createElement("a");
+				let url = "tclarchive/" + scr.id + "/" + scr.filename; 
+				a.href = url;
+				let span = document.createElement("span");
+				span.title = scr.downloads + " downloads";
+				let text = document.createTextNode(scr.name);
+				span.appendChild(text);
+				a.appendChild(span);
+				if (scr.category && scr.category != "") {
+					span = document.createElement("span");
+					span.classList.add("category");
+					text = document.createTextNode(scr.category);
+					span.appendChild(text);
+					a.appendChild(span);
+				}
+				td.appendChild(a);
+				tr.appendChild(td);
+							
+				td = document.createElement("td");
+				a = document.createElement("a");
+				a.href = url;
+				a.tabindex = -1;
+				span = document.createElement("span");
+				text = document.createTextNode(scr.version);
+				span.appendChild(text);
+				a.appendChild(span);
+				td.appendChild(a);
+				tr.appendChild(td);
+				
+				td = document.createElement("td");
+				a = document.createElement("a");
+				a.href = url;
+				a.tabindex = -1;
+				span = document.createElement("span");
+				text = document.createTextNode(scr.date);
+				span.appendChild(text);
+				a.appendChild(span);
+				td.appendChild(a);
+				tr.appendChild(td);
+				
+				td = document.createElement("td");
+				a = document.createElement("a");
+				a.href = url;
+				a.tabindex = -1;
+				span = document.createElement("span");
+				text = document.createTextNode(scr.author);
+				span.appendChild(text);
+				a.appendChild(span);
+				td.appendChild(a);
+				tr.appendChild(td);
+				
+				td = document.createElement("td");
+				a = document.createElement("a");
+				a.href = url;
+				a.tabindex = -1;
+				span = document.createElement("span");
+				text = document.createTextNode(scr.description);
+				span.appendChild(text);
+				a.appendChild(span);
+				td.appendChild(a);
+				if (scr.extdesc !== undefined) {
+					a = document.createElement("a");			
+					a.href = "javascript:";
+					a.className = "extdesc";
+					a.addEventListener("click", showExt(scr));
+					text = document.createTextNode("See extended description.");
+					a.appendChild(text);
+					td.appendChild(a);
+				}
+				tr.appendChild(td);
+				
+				return tr;
 			}
-		}
-		
-		function makeFilter(name, display) {
-			let frm = document.getElementById("cat-filter");
-			let input = document.createElement("input");
-			input.type = "radio";
-			input.name = "category";
-			input.value = name;
-			input.id = "cat-" + name;
-			input.addEventListener("change", filterRows);
-			frm.appendChild(input);
-			let lbl = document.createElement("label");
-			lbl.htmlFor = input.id; 
-			let text = document.createTextNode(display);
-			lbl.appendChild(text);
-			frm.appendChild(lbl);
-		}
-		
-		init();
-	</script>
+			
+			function showExt(scr) {
+				return (function() {
+					let et = document.getElementById("exttext");
+					et.childNodes.forEach(n => et.removeChild(n));
+					let tn = document.createTextNode(scr.extdesc);
+					et.appendChild(tn);
+					document.getElementById("extdesc").showModal();
+				});
+			}
+			
+			function filterRows() {
+				let fs = document.getElementById("search").value;
+				
+				let cat = document.querySelector("input[name=category]:checked").value;
+				
+				let attrs = ["name", "author", "description"];
+				
+				for (let scr of scripts) {
+					let found = false;
+					if (cat == "" || cat == scr.category) {
+						for (let attr of attrs) {
+							if (scr[attr].indexOf(fs) != -1) {
+								found = true;
+								break;
+							}
+						}
+					}
+					if (found) {
+						scr.tr.classList.remove("filtered");
+					} else {
+						scr.tr.classList.add("filtered");
+					}
+				}
+			}
+			
+			function parseDate(d) {
+				if (d == "-") {
+					return new Date("1970-01-01T00:00:00.000Z");
+				}
+				let re = /(\d\d)\/(\d\d)\/(\d{4})/
+				let arr = re.exec(d);
+				return new Date(`${arr[3]}-${arr[2]}-${arr[1]}T00:00:00.000Z`);
+			}
+			
+			function makeSort(name, defdesc, fn) {
+				if (fn === undefined) {
+					fn = a => a;
+				};
+				let cfa = function(a, b) {
+					let av = fn(a[name]);
+					let bv = fn(b[name]);
+					if (av < bv) {
+						return -1;
+					} else if (av > bv) {
+						return 1;
+					} else {
+						return 0;
+					}
+				};
+				let cfd = function(a, b) {
+					let av = fn(a[name]);
+					let bv = fn(b[name]);
+					if (av > bv) {
+						return -1;
+					} else if (av < bv) {
+						return 1;
+					} else {
+						return 0;
+					}
+				};
+				let cb = function() {
+					let lastSort = document.getElementById("th-" + orderby.name);
+					lastSort.classList.remove("sort-asc");
+					lastSort.classList.remove("sort-desc");
+				
+					if (orderby.name == name) {
+						orderby.order = !orderby.order;
+					} else {
+						orderby.name = name;
+						orderby.order = defdesc;
+					}
+					scripts.sort(orderby.order ? cfd : cfa);
+					let tbody = document.getElementById("tbody");
+					for (let scr of scripts) {
+						tbody.appendChild(scr.tr);
+					}
+					
+					document.getElementById("th-" + name).classList.add(orderby.order ? "sort-desc" : "sort-asc");
+				};
+				document.getElementById("th-" + name).addEventListener("click", cb);
+			}
+			
+			function buildCategories() {
+				let cats = {};
+				
+				for (let scr of scripts) {
+					if (scr.category && scr.category != "") {
+						cats[scr.category] = true;
+					}
+				}
+				
+				makeFilter("", "All");
+				document.getElementById("cat-").checked = true;
+				
+				for (let cat in cats) {
+					makeFilter(cat, cat);
+				}
+			}
+			
+			function makeFilter(name, display) {
+				let frm = document.getElementById("cat-filter");
+				let input = document.createElement("input");
+				input.type = "radio";
+				input.name = "category";
+				input.value = name;
+				input.id = "cat-" + name;
+				input.addEventListener("change", filterRows);
+				frm.appendChild(input);
+				let lbl = document.createElement("label");
+				lbl.htmlFor = input.id; 
+				let text = document.createTextNode(display);
+				lbl.appendChild(text);
+				frm.appendChild(lbl);
+			}
+			
+			init();
+		</script>
+	</head>
 	<body>
 		<p>In memory of <a href="http://mytclscripts.com/">SpiKe^^</a>. Rest in peace.</p>
 		<p>This is a read-only mirror of the <a href="https://tclarchive.org/">tclarchive.org</a> scripts.</p>
